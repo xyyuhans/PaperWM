@@ -1160,3 +1160,23 @@ function cycleWindowWidth(metaWindow) {
 
     delete metaWindow.unmaximized_rect;
 }
+
+function createWorkspace() {
+    if (Meta.prefs_get_dynamic_workspaces()) {
+        // Simply switch to last workspace
+        // Last workspace (highest index) is always an new empty workspace
+        // Note: super-end (goto last workspace) is a built-in keybinding.
+        const i = global.screen.n_workspaces - 1
+        return global.screen.get_workspace_by_index(i);
+    } else {
+        return global.screen.append_new_workspace(false, global.get_current_time());
+    }
+}
+
+function switchToNewWorkspace() {
+    const from = global.screen.get_active_workspace();
+    let to = createWorkspace();
+
+    Navigator.switchWorkspace(to, from);
+    to.activate(global.get_current_time());
+}

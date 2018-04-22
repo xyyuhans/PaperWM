@@ -31,6 +31,11 @@
       <summary>Switch to previously used window, backward order</summary>
     </key>
 
+    <key type="as" name="switch-to-new-workspace">
+      <default><![CDATA[[]]]></default>
+      <summary>Create and  switch to a new workspace</summary>
+    </key>
+
     <key type="as" name="previous-workspace">
       <default><![CDATA[['<Super>d', '<Super>Above_Tab']]]></default>
       <summary>Switch to previously used workspace</summary>
