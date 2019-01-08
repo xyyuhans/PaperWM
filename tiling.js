@@ -2555,6 +2555,7 @@ function takeWindow(metaWindow, space, {navigator}) {
     if (!navigator._movingId) {
         navigator._moving = [];
         navigator._movingId = navigator.connect('destroy', () => {
+            let space = spaces.selectedSpace;
             navigator._moving.reverse().forEach(w => {
                 w.change_workspace(space.workspace);
                 if (w.get_workspace() === space.workspace) {
