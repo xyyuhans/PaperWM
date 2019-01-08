@@ -1386,44 +1386,23 @@ class Spaces extends Map {
         let newSpace = this.selectedSpace;
         let to = from;
         if (move && this.selectedSpace.selectedWindow) {
-            let moving = this.selectedSpace.selectedWindow;
-            this._moving.push(moving);
-
-            this.selectedSpace.removeWindow(moving);
-            let actor = moving.get_compositor_private();
-            backgroundGroup.add_actor(moving.clone);
-            let lowest = this._moving[this._moving.length - 2];
-            lowest && backgroundGroup.set_child_below_sibling(moving.clone, lowest.clone);
-            let point = this.selectedSpace.cloneContainer.apply_relative_transform_to_point(
-                backgroundGroup, new Clutter.Vertex({x: moving.clone.x,
-                                                     y: moving.clone.y}));
-            moving.clone.set_position(point.x, point.y);
-            let x = Math.round(space.monitor.x +
-                               space.monitor.width -
-                               (0.1*space.monitor.width*(1 +this._moving.length)));
-            let y = Math.round(space.monitor.y + space.monitor.height*2/3)
-                + 20*this._moving.length;
-            moving.move_frame(true, x, y);
-            animateWindow(moving);
-            Tweener.addTween(moving.clone,
-                             {x, y,
-                              time: prefs.animation_time,
-                              transition
-                             });
-        } else {
-            if (direction === Meta.MotionDirection.DOWN)
-                to = from + 1;
-            else
-                to = from - 1;
-            if (to < 0 || to >= mru.length) {
-                to = from;
-            }
-            if (to === from && Tweener.getTweenCount(newSpace.actor) > 0)
-                return;
-
-            newSpace = mru[to];
-            this.selectedSpace = newSpace;
+            takeWindow(this.selectedSpace.selectedWindow,
+                       this.selectedSpace,
+                       {navigator: Navigator.getNavigator()});
         }
+
+        if (direction === Meta.MotionDirection.DOWN)
+            to = from + 1;
+        else
+            to = from - 1;
+        if (to < 0 || to >= mru.length) {
+            to = from;
+        }
+        if (to === from && Tweener.getTweenCount(newSpace.actor) > 0)
+            return;
+
+        newSpace = mru[to];
+        this.selectedSpace = newSpace;
 
         TopBar.updateWorkspaceIndicator(newSpace.workspace.index());
 
@@ -2570,4 +2549,44 @@ function movePreviousSpace(mw, space) {
 
 function movePreviousSpaceBackwards(mw, space) {
     spaces.selectSpace(Meta.MotionDirection.UP, true);
+}
+
+function takeWindow(metaWindow, space, {navigator}) {
+    if (!navigator._movingId) {
+        navigator._moving = [];
+        navigator._movingId = navigator.connect('destroy', () => {
+            navigator._moving.reverse().forEach(w => {
+                w.change_workspace(space.workspace);
+                if (w.get_workspace() === space.workspace) {
+                    insertWindow(w, {existing: true});
+                }
+            });
+        });
+    }
+    space = space || spaces.spaceOfWindow(metaWindow);
+    let moving = metaWindow;
+    navigator._moving.push(moving);
+
+    let parent = backgroundGroup;
+    space.removeWindow(moving);
+    let actor = moving.get_compositor_private();
+    parent.add_actor(moving.clone);
+    let lowest = navigator._moving[navigator._moving.length - 2];
+    lowest && parent.set_child_below_sibling(moving.clone, lowest.clone);
+    let point = space.cloneContainer.apply_relative_transform_to_point(
+        parent, new Clutter.Vertex({x: moving.clone.x,
+                                             y: moving.clone.y}));
+    moving.clone.set_position(point.x, point.y);
+    let x = Math.round(space.monitor.x +
+                       space.monitor.width -
+                       (0.1*space.monitor.width*(1 +navigator._moving.length)));
+    let y = Math.round(space.monitor.y + space.monitor.height*2/3)
+        + 20*navigator._moving.length;
+    moving.move_frame(true, x, y);
+    animateWindow(moving);
+    Tweener.addTween(moving.clone,
+                     {x, y,
+                      time: prefs.animation_time,
+                      transition: 'easeInOutQuad',
+                     });
 }
