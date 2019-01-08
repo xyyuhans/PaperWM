@@ -235,7 +235,7 @@ var Navigator = class Navigator {
 
         Main.wm._blockAnimations = this._block;
 
-        this.emit('destroy');
+        this.emit('destroy', this.was_accepted);
         navigator = false;
     }
 }
