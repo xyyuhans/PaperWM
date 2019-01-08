@@ -235,9 +235,8 @@ var Navigator = class Navigator {
 
         Main.wm._blockAnimations = this._block;
 
-        navigator = false;
-
         this.emit('destroy');
+        navigator = false;
     }
 }
 Signals.addSignalMethods(Navigator.prototype);
