@@ -86,9 +86,9 @@ var PopupMenuEntryHelper = function constructor(text) {
         this.prevIcon.grab_key_focus();
     });
 
-    this.actor.add_actor(this.prevIcon, {expand: true});
-    this.actor.add_actor(this.label, {expand: true});
-    this.actor.add_actor(this.nextIcon, {expand: true});
+    this.actor.add_actor(this.prevIcon);
+    this.actor.add_actor(this.label);
+    this.actor.add_actor(this.nextIcon);
     this.actor.label_actor = this.label;
     this.label.clutter_text.connect('activate', this.emit.bind(this, 'activate'));
 }
@@ -202,7 +202,7 @@ class WorkspaceMenu extends PanelMenu.Button {
     _init() {
         super._init(0.5, 'Workspace', false);
 
-        this.actor.name = 'workspace-button';
+        this.name = 'workspace-button';
 
         let scale = display.get_monitor_scale(Main.layoutManager.primaryIndex);
         this._label = new St.Label({
@@ -214,7 +214,7 @@ class WorkspaceMenu extends PanelMenu.Button {
 
         this.setName(Meta.prefs_get_workspace_name(workspaceManager.get_active_workspace_index()));
 
-        this.actor.add_actor(this._label);
+        this.add_actor(this._label);
 
         this.signals = new Utils.Signals();
         this.signals.connect(global.window_manager,
@@ -420,6 +420,8 @@ class WorkspaceMenu extends PanelMenu.Button {
                 let y = this.selected.actor.y;
                 let friction = 0.5;
                 while (test()) {
+
+                    log("while start")
                     let dy = this.velocity*16;
                     y -= dy;
                     // log(`calc target: ${dy} ${y} ${this.velocity}`);
@@ -493,7 +495,7 @@ var menu;
 var orginalActivitiesText;
 var screenSignals, signals;
 function init () {
-    let label = Main.panel.statusArea.activities.actor.first_child;
+    let label = Main.panel.statusArea.activities.first_child;
     orginalActivitiesText = label.text;
     screenSignals = [];
     signals = new Utils.Signals();
@@ -501,17 +503,17 @@ function init () {
 
 var panelBoxShowId, panelBoxHideId;
 function enable () {
-    Main.panel.statusArea.activities.actor.hide();
+    Main.panel.statusArea.activities.hide();
 
     menu = new WorkspaceMenu();
     // Work around 'actor' warnings
-    let panelActor = Main.panel.actor;
+    let panel = Main.panel;
     function fixLabel(label) {
         let point = new Clutter.Vertex({x: 0, y: 0});
-        let r = label.apply_relative_transform_to_point(panelActor, point);
+        let r = label.apply_relative_transform_to_point(panel, point);
 
         for (let [workspace, space] of Tiling.spaces) {
-            space.label.set_position(panelActor.x + Math.round(r.x), panelActor.y + Math.round(r.y));
+            space.label.set_position(panel.x + Math.round(r.x), panel.y + Math.round(r.y));
             let fontDescription = label.clutter_text.font_description;
             space.label.clutter_text.set_font_description(fontDescription);
         }
@@ -520,9 +522,7 @@ function enable () {
     menu.actor.show();
 
     // Force transparency
-    panelActor.set_style('background-color: rgba(0, 0, 0, 0.35);');
-    [Main.panel._rightCorner, Main.panel._leftCorner]
-        .forEach(c => c.actor.opacity = 0);
+    panel.set_style('background-color: rgba(0, 0, 0, 0.35);');
 
     screenSignals.push(
         workspaceManager.connect_after('workspace-switched',
