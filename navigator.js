@@ -49,17 +49,15 @@ var grab = false;
 var ActionDispatcher = class {
   constructor() {
     this.actor = new Clutter.Actor();
+    this.actor.set_flags(Clutter.ActorFlags.REACTIVE);
     Main.uiGroup.add_actor(this.actor);
-    if (!Main.pushModal(this.actor)) {
-      // Probably someone else has a pointer grab, try again with keyboard only
-      if (
-        !Main.pushModal(this.actor, {
-          options: Meta.ModalOptions.POINTER_ALREADY_GRABBED,
-        })
-      )
-        throw new Error("Could not grap a modal");
+    let tempGrab = Main.pushModal(this.actor);
+    // We expect at least a keyboard grab here
+    if ((tempGrab.get_seat_state() & Clutter.GrabState.KEYBOARD) === 0) {
+        Main.popModal(tempGrab);
+        return false;
     }
-    grab = true;
+    grab = tempGrab;
 
     this.actor.connect("key-press-event", this._keyPressEvent.bind(this));
     this.actor.connect("key-release-event", this._keyReleaseEvent.bind(this));
@@ -197,10 +195,10 @@ var ActionDispatcher = class {
   }
 
   destroy() {
-    grab = false;
     if (this._noModsTimeoutId != 0)
       Mainloop.source_remove(this._noModsTimeoutId);
-    Main.popModal(this.actor);
+    Main.popModal(grab);
+    grab = false;
     this.actor.destroy();
     this.actor = null;
     // We have already destroyed the navigator
